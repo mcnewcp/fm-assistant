@@ -10,36 +10,56 @@ def read_html_file(uploaded_file):
     return df_list[0] if df_list else None
 
 
-# function to score squad on a role
-def score_squad(
-    role: str,
+# function to score players on one or more roles
+def score_players(
+    roles: list,
     df_role: pd.DataFrame,
     df_squad: pd.DataFrame,
     selected_cols: list,
     all_attributes: list,
 ):
-    # generate weight dict for role
-    role_dict = df_role.query("Role==@role")[all_attributes].to_dict("records")[0]
+    # instantiate objects
+    primary_attributes = []
+    secondary_attributes = []
+    df_scores = pd.DataFrame(df_squad["Name"]).set_index("Name")
 
-    # list primary and secondary attributes
-    primary_attributes = [attr for attr, weight in role_dict.items() if weight == 1]
+    for role in roles:
+        # generate weight dict for role
+        role_dict = df_role.query("Role==@role")[all_attributes].to_dict("records")[0]
+
+        # list primary and secondary attributes
+        primary_attributes_role = [
+            attr for attr, weight in role_dict.items() if weight == 1
+        ]
+        secondary_attributes_role = [
+            attr for attr, weight in role_dict.items() if weight > 0 and weight < 1
+        ]
+
+        # score squad members
+        scores = df_squad.set_index("Name")[all_attributes].mul(role_dict).sum(axis=1)
+        total_weight = 0
+        for attr, weight in role_dict.items():
+            if pd.notna(weight):
+                total_weight += weight
+        norm_scores = scores / total_weight
+
+        # update objects
+        primary_attributes = primary_attributes + primary_attributes_role
+        secondary_attributes = secondary_attributes + secondary_attributes_role
+        df_scores = df_scores.join(pd.DataFrame({role: norm_scores}))
+
+    # get unique attribute lists
+    primary_attributes = list(set(primary_attributes))
+    secondary_attributes = list(set(secondary_attributes))
     secondary_attributes = [
-        attr for attr, weight in role_dict.items() if weight > 0 and weight < 1
+        attr for attr in secondary_attributes if attr not in primary_attributes
     ]
 
-    # score squad members
-    scores = df_squad.set_index("Name")[all_attributes].mul(role_dict).sum(axis=1)
-    total_weight = 0
-    for attr, weight in role_dict.items():
-        if pd.notna(weight):
-            total_weight += weight
-    norm_scores = scores / total_weight
-
     # compile score df and return
-    df_squad_scores = pd.DataFrame({role: norm_scores})
-    df_squad_scores = df_squad_scores.join(
+    df_scores = df_scores.join(
         df_squad.set_index("Name")[
             selected_cols + primary_attributes + secondary_attributes
         ]
-    ).reset_index()
-    return df_squad_scores
+    )
+
+    return df_scores, primary_attributes, secondary_attributes

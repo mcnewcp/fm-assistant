@@ -17,7 +17,6 @@ with st.sidebar:
         "Select roles for scoring",
         all_roles,
         "DLR-Inverted Wing Back Su",
-        max_selections=1,
         placeholder="Choose a role",
     )
 
@@ -43,14 +42,11 @@ if uploaded_file is not None:
         df_squad = read_html_file(uploaded_file)
 
         if len(roles) > 0:
-            # choose first, and only, in list
-            # this should be modified to work with multiple roles
-            role = roles[0]
             # generate scored df
-            df_squad_scores = score_squad(
-                role, df_role, df_squad, selected_cols, all_attributes
+            df_squad_scores, primary_attributes, secondary_attributes = score_players(
+                roles, df_role, df_squad, selected_cols, all_attributes
             )
 
             if df_squad_scores is not None:
                 # Display the DataFrame in an interactive table
-                st.dataframe(df_squad_scores, use_container_width=True, hide_index=True)
+                st.dataframe(df_squad_scores, use_container_width=True)
