@@ -23,9 +23,6 @@ with st.sidebar:
         max_selections=1,
         placeholder="Choose a role",
     )
-    # choose first, and only, in list
-    # this should be modified to work with multiple roles
-    role = roles[0]
 
     # squad file upload
     uploaded_file = st.file_uploader("Choose an HTML file", type="html")
@@ -39,11 +36,15 @@ if uploaded_file is not None:
         # Read HTML file
         df_squad = read_html_file(uploaded_file)
 
-        # generate scored df
-        df_squad_scores = score_squad(
-            role, df_role, df_squad, selected_cols, all_attributes
-        )
+        if len(roles) > 0:
+            # choose first, and only, in list
+            # this should be modified to work with multiple roles
+            role = roles[0]
+            # generate scored df
+            df_squad_scores = score_squad(
+                role, df_role, df_squad, selected_cols, all_attributes
+            )
 
-        if df_squad_scores is not None:
-            # Display the DataFrame in an interactive table
-            st.dataframe(df_squad_scores, use_container_width=True, hide_index=True)
+            if df_squad_scores is not None:
+                # Display the DataFrame in an interactive table
+                st.dataframe(df_squad_scores, use_container_width=True, hide_index=True)
