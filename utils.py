@@ -63,3 +63,37 @@ def score_players(
     )
 
     return df_scores, primary_attributes, secondary_attributes
+
+
+# function for summarizing scouting ranges by either mean, min, or max
+def summarize_scouting_ranges(
+    df_players: pd.DataFrame, summarization_method: str = "mean"
+):
+    # load a list of all attributes
+    df_role = pd.read_csv("role-config.csv")
+    all_attributes = df_role.drop(columns=["Role"]).columns.to_list()
+
+    # Function to convert string ranges to mean values
+    def summarize_range(value: str, summarization_method: str = "mean"):
+        if value == "-":
+            return 0
+        elif "-" in value:
+            start, end = map(int, value.split("-"))
+            if summarization_method == "mean":
+                return (start + end) / 2
+            elif summarization_method == "min":
+                return float(start)
+            elif summarization_method == "max":
+                return float(end)
+        else:
+            return float(value)
+
+    # Apply the conversion function to all attribute columns
+    df_players_fun = df_players.set_index("Name")
+    df_attr = df_players_fun[all_attributes]
+    df_attr = df_attr.map(summarize_range, summarization_method=summarization_method)
+
+    # re-join and return
+    df_out = df_players_fun.drop(columns=all_attributes).join(df_attr)
+    df_out.reset_index(inplace=True)
+    return df_out

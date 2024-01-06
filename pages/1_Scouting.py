@@ -46,8 +46,13 @@ if uploaded_file is not None:
         st.error("Error: Please upload a valid HTML file.")
     else:
         # Read HTML file
-        st.session_state["df_players_scout"] = read_html_file(uploaded_file)
+        df_html = read_html_file(uploaded_file)
+        # summarize scouting ranges
+        st.session_state["df_players_scout"] = summarize_scouting_ranges(
+            df_html, "mean"
+        )
 
+st.write(st.session_state)
 if len(roles) > 0 and "df_players_scout" in st.session_state:
     # generate scored df
     df_scores, primary_attributes, secondary_attributes = score_players(
