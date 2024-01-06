@@ -3,7 +3,6 @@ import pandas as pd
 from utils import *
 
 # Parameters - these should be converted to user selections
-role = "CM-Mezzala At"
 selected_cols = ["Age", "Personality", "Height"]
 
 
@@ -11,10 +10,24 @@ st.title("Football Manager Assistant")
 
 # load roles
 df_role = pd.read_csv("role-config.csv")
+all_roles = df_role["Role"].unique()
 all_attributes = df_role.drop(columns=["Role"]).columns.to_list()
 
 # sidebar
 with st.sidebar:
+    # role selection
+    roles = st.multiselect(
+        "Select roles for scoring",
+        all_roles,
+        "DLR-Inverted Wing Back Su",
+        max_selections=1,
+        placeholder="Choose a role",
+    )
+    # choose first, and only, in list
+    # this should be modified to work with multiple roles
+    role = roles[0]
+
+    # squad file upload
     uploaded_file = st.file_uploader("Choose an HTML file", type="html")
 
 # load squad df
