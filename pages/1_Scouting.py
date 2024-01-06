@@ -32,12 +32,23 @@ with st.sidebar:
         placeholder="Choose display columns",
     )
 
+    # scouting summarization method selection
+    summarization_dict = {"min": 0, "mean": 1, "max": 2}
+    selected_summarization = st.radio(
+        "Select summarization method for attribute scouting ranges",
+        ["min", "mean", "max"],
+        1
+        if "summarization" not in st.session_state
+        else summarization_dict[st.session_state["summarization"]],
+    )
+
     # scouting file upload
     uploaded_file = st.file_uploader("Choose an exported squad HTML", type="html")
 
 # update session state
 st.session_state["roles_scout"] = roles
 st.session_state["selected_cols_scout"] = selected_cols
+st.session_state["summarization"] = selected_summarization
 
 # load players df
 if uploaded_file is not None:
@@ -49,10 +60,9 @@ if uploaded_file is not None:
         df_html = read_html_file(uploaded_file)
         # summarize scouting ranges
         st.session_state["df_players_scout"] = summarize_scouting_ranges(
-            df_html, "mean"
+            df_html, selected_summarization
         )
 
-st.write(st.session_state)
 if len(roles) > 0 and "df_players_scout" in st.session_state:
     # generate scored df
     df_scores, primary_attributes, secondary_attributes = score_players(
