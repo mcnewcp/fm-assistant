@@ -13,11 +13,13 @@ def read_html_file(uploaded_file):
 # function to score players on one or more roles
 def score_players(
     roles: list,
-    df_role: pd.DataFrame,
     df_squad: pd.DataFrame,
     selected_cols: list,
-    all_attributes: list,
 ):
+    # load role config
+    df_role = pd.read_csv("role-config.csv")
+    all_attributes = df_role.drop(columns=["Role"]).columns.to_list()
+
     # instantiate objects
     primary_attributes = []
     secondary_attributes = []

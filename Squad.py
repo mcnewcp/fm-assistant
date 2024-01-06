@@ -8,7 +8,6 @@ st.title("Football Manager Assistant")
 # load roles
 df_role = pd.read_csv("role-config.csv")
 all_roles = df_role["Role"].unique()
-all_attributes = df_role.drop(columns=["Role"]).columns.to_list()
 
 # sidebar
 with st.sidebar:
@@ -44,7 +43,7 @@ if uploaded_file is not None:
         if len(roles) > 0:
             # generate scored df
             df_squad_scores, primary_attributes, secondary_attributes = score_players(
-                roles, df_role, df_squad, selected_cols, all_attributes
+                roles, df_squad, selected_cols
             )
 
             if df_squad_scores is not None:
