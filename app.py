@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 from utils import *
 
-# Parameters - these should be converted to user selections
-selected_cols = ["Age", "Personality", "Height"]
-
 
 st.title("Football Manager Assistant")
 
@@ -22,6 +19,15 @@ with st.sidebar:
         "DLR-Inverted Wing Back Su",
         max_selections=1,
         placeholder="Choose a role",
+    )
+
+    # display columns selection
+    selectable_cols = ["Age", "Personality", "Height", "Left Foot", "Right Foot"]
+    selected_cols = st.multiselect(
+        "Select additional display columns",
+        selectable_cols,
+        ["Age", "Personality"],
+        placeholder="Choose display columns",
     )
 
     # squad file upload
