@@ -15,7 +15,9 @@ with st.sidebar:
     roles = st.multiselect(
         "Select roles for scoring squad",
         all_roles,
-        "DLR-Inverted Wing Back Su",
+        "DLR-Inverted Wing Back Su"
+        if "roles_squad" not in st.session_state
+        else st.session_state["roles_squad"],
         placeholder="Choose one or more roles",
     )
 
@@ -24,7 +26,9 @@ with st.sidebar:
     selected_cols = st.multiselect(
         "Select additional display columns",
         selectable_cols,
-        ["Age", "Personality"],
+        ["Age", "Personality"]
+        if "selected_cols_squad" not in st.session_state
+        else st.session_state["selected_cols_squad"],
         placeholder="Choose display columns",
     )
 
