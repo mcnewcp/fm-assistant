@@ -13,7 +13,7 @@ def read_html_file(uploaded_file):
 # function to score players on one or more roles
 def score_players(
     roles: list,
-    df_squad: pd.DataFrame,
+    df: pd.DataFrame,
     selected_cols: list,
 ):
     # load role config
@@ -23,7 +23,7 @@ def score_players(
     # instantiate objects
     primary_attributes = []
     secondary_attributes = []
-    df_scores = pd.DataFrame(df_squad["Name"]).set_index("Name")
+    df_scores = pd.DataFrame(df["Name"]).set_index("Name")
 
     for role in roles:
         # generate weight dict for role
@@ -38,7 +38,7 @@ def score_players(
         ]
 
         # score squad members
-        scores = df_squad.set_index("Name")[all_attributes].mul(role_dict).sum(axis=1)
+        scores = df.set_index("Name")[all_attributes].mul(role_dict).sum(axis=1)
         total_weight = 0
         for attr, weight in role_dict.items():
             if pd.notna(weight):
@@ -59,9 +59,7 @@ def score_players(
 
     # compile score df and return
     df_scores = df_scores.join(
-        df_squad.set_index("Name")[
-            selected_cols + primary_attributes + secondary_attributes
-        ]
+        df.set_index("Name")[selected_cols + primary_attributes + secondary_attributes]
     )
 
     return df_scores, primary_attributes, secondary_attributes
