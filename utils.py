@@ -7,7 +7,10 @@ def read_html_file(uploaded_file):
     df_list = pd.read_html(uploaded_file, encoding="utf-8")
 
     # Select the relevant DataFrame from the list of DataFrames if there are multiple tables
-    return df_list[0] if df_list else None
+    df = df_list[0]
+
+    # drop any rows that are all NAs
+    return df.dropna(how="all")
 
 
 # function to score players on one or more roles
