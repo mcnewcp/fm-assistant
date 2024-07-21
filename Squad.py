@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from utils import *
 
 
@@ -42,6 +43,54 @@ with st.sidebar:
 # update session state
 st.session_state["roles_squad"] = roles
 st.session_state["selected_cols_squad"] = selected_cols
+
+# load previous squad planner
+df_squad_planner = pd.read_csv("data/squad_plan.csv")
+
+# set up squad planner df
+depth = 4  # squad depth per role
+rating_cols = [f"rating_{i}" for i in range(1, depth + 1)]
+age_cols = [f"age_{i}" for i in range(1, depth + 1)]
+
+
+# apply conditional formatting to rating cols
+def pd_styler(styler, rating_cols: list, age_cols: list):
+    styler.format(precision=2, subset=rating_cols)
+    styler.format(precision=0, subset=age_cols)
+    styler.background_gradient(axis=None, cmap="RdYlGn", subset=rating_cols)
+    return styler
+
+
+df_squad_planner_styled = df_squad_planner.style.pipe(
+    pd_styler, rating_cols=rating_cols, age_cols=age_cols
+)
+
+# display squad planner df
+column_config = {
+    "position": st.column_config.TextColumn(
+        "Position",
+        help="Enter any position, doesn't affect calculations",
+    ),
+    "role": st.column_config.TextColumn(
+        "Role", help="Select role to calculate ratings"
+    ),
+}
+# Add entries to column_config for each player depth
+for i in range(1, depth + 1):
+    column_config[f"name_{i}"] = st.column_config.TextColumn(
+        "Name", help="Select player name"
+    )
+    column_config[f"age_{i}"] = st.column_config.NumberColumn(
+        "Age", help="Age of player", disabled=True
+    )
+    column_config[f"rating_{i}"] = st.column_config.NumberColumn(
+        "Rating", help="Rating of player in chosen role", disabled=True
+    )
+st.data_editor(
+    df_squad_planner_styled,
+    disabled=rating_cols + age_cols,
+    column_config=column_config,
+)
 
 # load players df
 if uploaded_file is not None:
