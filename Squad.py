@@ -47,6 +47,27 @@ st.session_state["selected_cols_squad"] = selected_cols
 # load previous squad planner
 df_squad_planner = pd.read_csv("data/squad_plan.csv")
 
+# load players df
+if uploaded_file is not None:
+    # Check if the uploaded file has an HTML extension
+    if not uploaded_file.name.endswith(".html"):
+        st.error("Error: Please upload a valid HTML file.")
+    else:
+        # Read HTML file
+        st.session_state["df_players_squad"] = read_html_file(uploaded_file)
+
+# load all possible players
+all_names = st.session_state.df_players_squad.Name.unique()
+
+if len(roles) > 0 and "df_players_squad" in st.session_state:
+    # generate scored df
+    df_scores = score_players(
+        roles, st.session_state["df_players_squad"], selected_cols
+    )
+
+    # display table
+    st.dataframe(df_scores, use_container_width=True)
+
 # set up squad planner df
 depth = 4  # squad depth per role
 rating_cols = [f"rating_{i}" for i in range(1, depth + 1)]
@@ -77,8 +98,8 @@ column_config = {
 }
 # Add entries to column_config for each player depth
 for i in range(1, depth + 1):
-    column_config[f"name_{i}"] = st.column_config.TextColumn(
-        "Name", help="Select player name"
+    column_config[f"name_{i}"] = st.column_config.SelectboxColumn(
+        "Name", help="Select player name", options=all_names
     )
     column_config[f"age_{i}"] = st.column_config.NumberColumn(
         "Age", help="Age of player", disabled=True
@@ -93,21 +114,3 @@ st.data_editor(
     num_rows="fixed",
     hide_index=True,
 )
-
-# load players df
-if uploaded_file is not None:
-    # Check if the uploaded file has an HTML extension
-    if not uploaded_file.name.endswith(".html"):
-        st.error("Error: Please upload a valid HTML file.")
-    else:
-        # Read HTML file
-        st.session_state["df_players_squad"] = read_html_file(uploaded_file)
-
-if len(roles) > 0 and "df_players_squad" in st.session_state:
-    # generate scored df
-    df_scores = score_players(
-        roles, st.session_state["df_players_squad"], selected_cols
-    )
-
-    # display table
-    st.dataframe(df_scores, use_container_width=True)
