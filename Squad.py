@@ -17,7 +17,7 @@ with st.sidebar:
         "Select roles for scoring squad",
         all_roles,
         (
-            "DLR-Inverted Wing Back Su"
+            "Inverted Wing Back (A)"
             if "roles_squad" not in st.session_state
             else st.session_state["roles_squad"]
         ),
@@ -71,8 +71,8 @@ column_config = {
         "Position",
         help="Enter any position, doesn't affect calculations",
     ),
-    "role": st.column_config.TextColumn(
-        "Role", help="Select role to calculate ratings"
+    "role": st.column_config.SelectboxColumn(
+        "Role", help="Select role to calculate ratings", options=all_roles
     ),
 }
 # Add entries to column_config for each player depth
@@ -90,6 +90,8 @@ st.data_editor(
     df_squad_planner_styled,
     disabled=rating_cols + age_cols,
     column_config=column_config,
+    num_rows="fixed",
+    hide_index=True,
 )
 
 # load players df
