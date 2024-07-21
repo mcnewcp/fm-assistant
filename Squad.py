@@ -15,9 +15,11 @@ with st.sidebar:
     roles = st.multiselect(
         "Select roles for scoring squad",
         all_roles,
-        "DLR-Inverted Wing Back Su"
-        if "roles_squad" not in st.session_state
-        else st.session_state["roles_squad"],
+        (
+            "DLR-Inverted Wing Back Su"
+            if "roles_squad" not in st.session_state
+            else st.session_state["roles_squad"]
+        ),
         placeholder="Choose one or more roles",
     )
 
@@ -26,9 +28,11 @@ with st.sidebar:
     selected_cols = st.multiselect(
         "Select additional display columns",
         selectable_cols,
-        ["Age", "Personality"]
-        if "selected_cols_squad" not in st.session_state
-        else st.session_state["selected_cols_squad"],
+        (
+            ["Age", "Personality"]
+            if "selected_cols_squad" not in st.session_state
+            else st.session_state["selected_cols_squad"]
+        ),
         placeholder="Choose display columns",
     )
 
@@ -50,7 +54,7 @@ if uploaded_file is not None:
 
 if len(roles) > 0 and "df_players_squad" in st.session_state:
     # generate scored df
-    df_scores, primary_attributes, secondary_attributes = score_players(
+    df_scores = score_players(
         roles, st.session_state["df_players_squad"], selected_cols
     )
 
