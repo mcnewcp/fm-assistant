@@ -49,7 +49,7 @@ def pivot_squad_plan_wide(df_long: pd.DataFrame, depth: int):
         for i in range(1, depth + 1):
             choice_row = df_filtered[df_filtered["choice"] == i]
             if not choice_row.empty:
-                wide_row[f"name_{i}"] = choice_row.iloc[0]["Name"]
+                wide_row[f"name_{i}"] = choice_row.iloc[0]["name"]
                 wide_row[f"age_{i}"] = choice_row.iloc[0]["age"]
                 wide_row[f"rating_{i}"] = choice_row.iloc[0]["rating"]
             else:

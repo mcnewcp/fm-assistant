@@ -31,7 +31,7 @@ all_teams = ss.df_squad["Team"].unique()
 # sidebar
 with st.sidebar:
     # squad depth for each role
-    ss.depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
+    depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
 
     # load the most recent squad plan
     load_squad_plan = st.button("Load Squad Plan", "Load the most recent squad plan")
@@ -70,7 +70,10 @@ with st.sidebar:
                     "Update Squad", help="Update the squad database"
                 )
 
-df_squad_plan_wide = attach_player_cols(ss.df_squad_plan)
+df_squad_plan_wide = ss.df_squad_plan.pipe(attach_player_cols).pipe(
+    pivot_squad_plan_wide, depth=depth
+)
+
 st.data_editor(df_squad_plan_wide)
 
 # # apply conditional formatting to rating cols
