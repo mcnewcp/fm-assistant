@@ -9,6 +9,7 @@ from utils import (
     attach_player_cols,
     pivot_squad_plan_wide,
     style_squad_plan,
+    get_column_config,
 )
 
 
@@ -77,8 +78,9 @@ df_display = (
     .pipe(style_squad_plan)
 )
 
+column_config = get_column_config(depth, all_roles, all_names)
 st.data_editor(
-    df_display, disabled=["rating_1", "rating_2", "rating_3", "age_1", "age_2", "age_3"]
+    df_display, column_config=column_config, num_rows="fixed", hide_index=True
 )
 
 # # display squad planner df

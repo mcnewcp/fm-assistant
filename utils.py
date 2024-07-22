@@ -102,6 +102,31 @@ def _pd_styler(styler, rating_cols: list, age_cols: list):
     return styler
 
 
+# define config for data_editor display
+def get_column_config(depth: int, all_roles: list, all_names: list):
+    column_config = {
+        "position": st.column_config.TextColumn(
+            "Position",
+            help="Enter any position, doesn't affect calculations",
+        ),
+        "role": st.column_config.SelectboxColumn(
+            "Role", help="Select role to calculate ratings", options=all_roles
+        ),
+    }
+    # Add entries to column_config for each player depth
+    for i in range(1, depth + 1):
+        column_config[f"name_{i}"] = st.column_config.SelectboxColumn(
+            "Name", help="Select player name", options=all_names
+        )
+        column_config[f"age_{i}"] = st.column_config.NumberColumn(
+            "Age", help="Age of player", disabled=True
+        )
+        column_config[f"rating_{i}"] = st.column_config.NumberColumn(
+            "Rating", help="Rating of player in chosen role", disabled=True
+        )
+    return column_config
+
+
 # function for reading table from html
 def read_html_file(uploaded_file):
     # Read the HTML table with utf-8 encoding
