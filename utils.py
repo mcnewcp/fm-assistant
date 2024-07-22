@@ -1,4 +1,27 @@
 import pandas as pd
+import streamlit as st
+from streamlit import session_state as ss
+
+
+# load df_squad into session state
+def load_squad():
+    squad_db = pd.read_csv("data/squad.csv", parse_dates=["Date"])
+    recent_date = squad_db.Date.max()
+    df_squad = squad_db[squad_db["Date"] == recent_date]
+    ss.df_squad = df_squad
+
+
+# load df_squad_plan into session state
+def load_squad_plan():
+    squad_plan_db = pd.read_csv("data/squad_plan.csv", parse_dates=["date"])
+    recent_date = squad_plan_db.date.max()
+    df_squad_plan = squad_plan_db[squad_plan_db["date"] == recent_date]
+    ss.df_squad_plan = df_squad_plan
+
+
+# load role config into session state
+def load_role_config():
+    ss.df_role_config = pd.read_csv("role-config.csv")
 
 
 # function for reading table from html
