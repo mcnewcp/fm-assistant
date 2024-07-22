@@ -82,32 +82,3 @@ column_config = get_column_config(depth, all_roles, all_names)
 st.data_editor(
     df_display, column_config=column_config, num_rows="fixed", hide_index=True
 )
-
-# # display squad planner df
-# column_config = {
-#     "position": st.column_config.TextColumn(
-#         "Position",
-#         help="Enter any position, doesn't affect calculations",
-#     ),
-#     "role": st.column_config.SelectboxColumn(
-#         "Role", help="Select role to calculate ratings", options=all_roles
-#     ),
-# }
-# # Add entries to column_config for each player depth
-# for i in range(1, depth + 1):
-#     column_config[f"name_{i}"] = st.column_config.SelectboxColumn(
-#         "Name", help="Select player name", options=all_names
-#     )
-#     column_config[f"age_{i}"] = st.column_config.NumberColumn(
-#         "Age", help="Age of player", disabled=True
-#     )
-#     column_config[f"rating_{i}"] = st.column_config.NumberColumn(
-#         "Rating", help="Rating of player in chosen role", disabled=True
-#     )
-# st.data_editor(
-#     df_squad_planner_styled,
-#     disabled=rating_cols + age_cols,
-#     column_config=column_config,
-#     num_rows="fixed",
-#     hide_index=True,
-# )
