@@ -41,6 +41,35 @@ def attach_player_cols(df):
     return df_out
 
 
+# attach ratings to squad plan df
+def attach_rating(df: pd.DataFrame):
+    df_out = df
+    df_out.drop(columns="rating")
+
+    # Apply the rating calculation to each row in the squad plan
+    df_out["rating"] = df_out.apply(
+        lambda row: _calculate_rating(row["UID"], row["role"]), axis=1
+    )
+
+    return df_out
+
+
+# calculate a player's rating for a role
+def _calculate_rating(uid: str, role: str):
+    # fetch weights for role
+    role_weights = ss.df_role_config[ss.df_role_config["Role"] == role].iloc[0][1:]
+
+    # fetch player attributes
+    player_attributes = ss.df_squad[ss.df_squad["UID"] == uid].iloc[0]
+    player_attributes = player_attributes[role_weights.index]
+
+    # Calculate the rating
+    weighted_attributes = player_attributes * role_weights
+    rating = weighted_attributes.sum() / role_weights.sum()
+
+    return rating
+
+
 # pivot squad plan wide for display
 def pivot_squad_plan_wide(df_long: pd.DataFrame, depth: int):
     # Initialize an empty list to store the wide format data

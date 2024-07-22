@@ -7,6 +7,7 @@ from utils import (
     load_squad_plan,
     load_role_config,
     attach_player_cols,
+    attach_rating,
     pivot_squad_plan_wide,
     style_squad_plan,
     get_column_config,
@@ -72,10 +73,12 @@ with st.sidebar:
                     "Update Squad", help="Update the squad database"
                 )
 
+# generate display df
 df_display = (
-    ss.df_squad_plan.pipe(attach_player_cols)
-    .pipe(pivot_squad_plan_wide, depth=depth)
-    .pipe(style_squad_plan)
+    ss.df_squad_plan.pipe(attach_player_cols)  # lookup age, name
+    .pipe(attach_rating)  # calculate rating
+    .pipe(pivot_squad_plan_wide, depth=depth)  # pivot wide for display
+    .pipe(style_squad_plan)  # style ratings, age
 )
 
 column_config = get_column_config(depth, all_roles, all_names)
