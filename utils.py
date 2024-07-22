@@ -24,6 +24,65 @@ def load_role_config():
     ss.df_role_config = pd.read_csv("role-config.csv")
 
 
+# pivot squad plan wide for display
+def pivot_squad_plan_wide(df_long: pd.DataFrame, depth: int):
+    # Initialize an empty list to store the wide format data
+    wide_data = []
+
+    # Get the unique combinations of position and role
+    unique_positions_roles = df_long[["position", "role"]].drop_duplicates()
+
+    # Iterate over each unique position and role
+    for _, pos_role in unique_positions_roles.iterrows():
+        position = pos_role["position"]
+        role = pos_role["role"]
+
+        # Filter the squad plan for the current position and role
+        df_filtered = df_long[
+            (df_long["position"] == position) & (df_long["role"] == role)
+        ]
+
+        # Initialize a dictionary to store the wide format data for the current position and role
+        wide_row = {"position": position, "role": role}
+
+        # Iterate over the range from 1 to depth to populate the name, age, and rating columns
+        for i in range(1, depth + 1):
+            choice_row = df_filtered[df_filtered["choice"] == i]
+            if not choice_row.empty:
+                wide_row[f"name_{i}"] = choice_row.iloc[0]["Name"]
+                wide_row[f"age_{i}"] = choice_row.iloc[0]["age"]
+                wide_row[f"rating_{i}"] = choice_row.iloc[0]["rating"]
+            else:
+                wide_row[f"name_{i}"] = None
+                wide_row[f"age_{i}"] = None
+                wide_row[f"rating_{i}"] = None
+
+        # Append the wide format row to the list
+        wide_data.append(wide_row)
+
+    # Convert the list of dictionaries to a DataFrame
+    df_wide = pd.DataFrame(wide_data)
+
+    return df_wide
+
+
+# attach name and updated age
+def attach_player_cols(df):
+    """
+    Attach player name and age to the squad plan based on UID.
+    """
+    # drop age col prior to updating
+    df_out = df.drop(columns="age")
+
+    # Merge squad plan with squad to get name and age
+    df_out = df_out.merge(ss.df_squad[["UID", "Name", "Age"]], on="UID", how="left")
+
+    # Rename the columns to match the expected output
+    df_out.rename(columns={"Name": "name", "Age": "age"}, inplace=True)
+
+    return df_out
+
+
 # function for reading table from html
 def read_html_file(uploaded_file):
     # Read the HTML table with utf-8 encoding

@@ -2,7 +2,13 @@ import streamlit as st
 from streamlit import session_state as ss
 import pandas as pd
 import datetime
-from utils import load_squad, load_squad_plan, load_role_config
+from utils import (
+    load_squad,
+    load_squad_plan,
+    load_role_config,
+    attach_player_cols,
+    pivot_squad_plan_wide,
+)
 
 
 st.title("Football Manager Assistant ⚽️🤖")
@@ -25,7 +31,7 @@ all_teams = ss.df_squad["Team"].unique()
 # sidebar
 with st.sidebar:
     # squad depth for each role
-    depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
+    ss.depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
 
     # load the most recent squad plan
     load_squad_plan = st.button("Load Squad Plan", "Load the most recent squad plan")
@@ -64,12 +70,8 @@ with st.sidebar:
                     "Update Squad", help="Update the squad database"
                 )
 
-st.data_editor(ss.df_squad_plan)
-
-# # set up squad planner df
-# rating_cols = [f"rating_{i}" for i in range(1, depth + 1)]
-# age_cols = [f"age_{i}" for i in range(1, depth + 1)]
-
+df_squad_plan_wide = attach_player_cols(ss.df_squad_plan)
+st.data_editor(df_squad_plan_wide)
 
 # # apply conditional formatting to rating cols
 # def pd_styler(styler, rating_cols: list, age_cols: list):
