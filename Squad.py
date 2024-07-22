@@ -8,6 +8,7 @@ from utils import (
     load_role_config,
     attach_player_cols,
     pivot_squad_plan_wide,
+    style_squad_plan,
 )
 
 
@@ -70,23 +71,15 @@ with st.sidebar:
                     "Update Squad", help="Update the squad database"
                 )
 
-df_squad_plan_wide = ss.df_squad_plan.pipe(attach_player_cols).pipe(
-    pivot_squad_plan_wide, depth=depth
+df_display = (
+    ss.df_squad_plan.pipe(attach_player_cols)
+    .pipe(pivot_squad_plan_wide, depth=depth)
+    .pipe(style_squad_plan)
 )
 
-st.data_editor(df_squad_plan_wide)
-
-# # apply conditional formatting to rating cols
-# def pd_styler(styler, rating_cols: list, age_cols: list):
-#     styler.format(precision=2, subset=rating_cols)
-#     styler.format(precision=0, subset=age_cols)
-#     styler.background_gradient(axis=None, cmap="RdYlGn", subset=rating_cols)
-#     return styler
-
-
-# df_squad_planner_styled = df_squad_planner.style.pipe(
-#     pd_styler, rating_cols=rating_cols, age_cols=age_cols
-# )
+st.data_editor(
+    df_display, disabled=["rating_1", "rating_2", "rating_3", "age_1", "age_2", "age_3"]
+)
 
 # # display squad planner df
 # column_config = {

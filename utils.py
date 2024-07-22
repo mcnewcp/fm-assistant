@@ -24,6 +24,23 @@ def load_role_config():
     ss.df_role_config = pd.read_csv("role-config.csv")
 
 
+# attach name and updated age
+def attach_player_cols(df):
+    """
+    Attach player name and age to the squad plan based on UID.
+    """
+    # drop age col prior to updating
+    df_out = df.drop(columns="age")
+
+    # Merge squad plan with squad to get name and age
+    df_out = df_out.merge(ss.df_squad[["UID", "Name", "Age"]], on="UID", how="left")
+
+    # Rename the columns to match the expected output
+    df_out.rename(columns={"Name": "name", "Age": "age"}, inplace=True)
+
+    return df_out
+
+
 # pivot squad plan wide for display
 def pivot_squad_plan_wide(df_long: pd.DataFrame, depth: int):
     # Initialize an empty list to store the wide format data
@@ -66,21 +83,23 @@ def pivot_squad_plan_wide(df_long: pd.DataFrame, depth: int):
     return df_wide
 
 
-# attach name and updated age
-def attach_player_cols(df):
-    """
-    Attach player name and age to the squad plan based on UID.
-    """
-    # drop age col prior to updating
-    df_out = df.drop(columns="age")
+# apply pandas styling to wide squad plan
+def style_squad_plan(df: pd.DataFrame):
+    # fetch col names
+    age_cols = [col for col in df.columns if "age" in col]
+    rating_cols = [col for col in df.columns if "rating" in col]
 
-    # Merge squad plan with squad to get name and age
-    df_out = df_out.merge(ss.df_squad[["UID", "Name", "Age"]], on="UID", how="left")
+    # apply styling
+    df_styled = df.style.pipe(_pd_styler, rating_cols=rating_cols, age_cols=age_cols)
+    return df_styled
 
-    # Rename the columns to match the expected output
-    df_out.rename(columns={"Name": "name", "Age": "age"}, inplace=True)
 
-    return df_out
+# pandas styler function
+def _pd_styler(styler, rating_cols: list, age_cols: list):
+    styler.format(precision=2, subset=rating_cols)
+    styler.format(precision=0, subset=age_cols)
+    styler.background_gradient(axis=None, cmap="RdYlGn", subset=rating_cols)
+    return styler
 
 
 # function for reading table from html
