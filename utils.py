@@ -253,16 +253,33 @@ def save_squad_plan_csv(
     df_out.to_csv(path, mode="a", index=False, header=False)
 
 
-# # function for reading table from html
-# def read_html_file(uploaded_file):
-#     # Read the HTML table with utf-8 encoding
-#     df_list = pd.read_html(uploaded_file, encoding="utf-8")
+def update_squad_csv(
+    uploaded_file, team: str, date: datetime.date, path: str = "data/squad.csv"
+):
+    # read file
+    df_out = _read_html_file(uploaded_file)
 
-#     # Select the relevant DataFrame from the list of DataFrames if there are multiple tables
-#     df = df_list[0]
+    # attach date, team selections
+    df_out["Team"] = team
+    df_out["Date"] = date
 
-#     # drop any rows that are all NAs
-#     return df.dropna(how="all")
+    # append to csv "database"
+    df_out.to_csv(path, mode="a", index=False, header=False)
+
+    # reload sqaud in ss
+    load_squad()
+
+
+# function for reading table from html
+def _read_html_file(uploaded_file):
+    # Read the HTML table with utf-8 encoding
+    df_list = pd.read_html(uploaded_file, encoding="utf-8")
+
+    # Select the relevant DataFrame from the list of DataFrames if there are multiple tables
+    df = df_list[0]
+
+    # drop any rows that are all NAs
+    return df.dropna(how="all")
 
 
 # # function for summarizing scouting ranges by either mean, min, or max

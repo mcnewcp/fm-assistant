@@ -13,6 +13,7 @@ from utils import (
     pivot_squad_plan_long,
     attach_uid,
     save_squad_plan_csv,
+    update_squad_csv,
 )
 
 
@@ -35,51 +36,67 @@ all_teams = ss.df_squad["Team"].unique()
 
 # sidebar
 with st.sidebar:
-    # squad depth for each role
-    depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
 
-    # load the most recent squad plan
-    load_squad_plan_button = st.button(
-        "Load Squad Plan", "Load the most recent squad plan"
-    )
-    if load_squad_plan_button:
-        load_squad_plan()
-
-    # in-game date for use with saving squad plan and updating squad
-    new_date = st.date_input(
-        "In-Game Date",
-        None,
-        datetime.date(2020, 1, 1),
-        datetime.date(2050, 12, 31),
-        help="In-Game date must be specified for saving a Squad Plan or updating the Squad",
-    )
-
-    if new_date:
-        # save squad plan
-        save_squad_plan_button = st.button(
-            "Save Squad Plan", help="Save the current squad plan in the database"
+    # user selections
+    with st.container(border=True):
+        st.write("User Inputs")
+        # squad depth for each role
+        depth = st.number_input(
+            "Position Depth", 1, 10, 4, help="Depth to display for each role"
         )
-        if save_squad_plan_button:
-            save_squad_plan_csv(ss.df_squad_plan, new_date)
-
-        # update squad
-        update_squad_file = st.file_uploader(
-            "Upload Squad Export", type=["html"], accept_multiple_files=False
+        # in-game date for use with saving squad plan and updating squad
+        new_date = st.date_input(
+            "In-Game Date",
+            None,
+            datetime.date(2020, 1, 1),
+            datetime.date(2050, 12, 31),
+            help="In-Game date must be specified for saving a Squad Plan or updating the Squad",
         )
 
-        if update_squad_file:
-            # team for uploaded file
-            update_squad_team = st.radio(
-                "Team",
-                all_teams,
-                None,
-                help="Choose team associated with the squad update file",
+    with st.container(border=True):
+        st.write("Update Squad Plan")
+        # load the most recent squad plan
+        load_squad_plan_button = st.button(
+            "Load Squad Plan", "Load the most recent squad plan"
+        )
+        if load_squad_plan_button:
+            load_squad_plan()
+        if new_date:
+            # save squad plan
+            save_squad_plan_button = st.button(
+                "Save Squad Plan", help="Save the current squad plan in the database"
+            )
+            if save_squad_plan_button:
+                save_squad_plan_csv(ss.df_squad_plan, new_date)
+
+    with st.container(border=True):
+        st.write("Update Squad")
+        if new_date:
+            update_squad_file_senior = st.file_uploader(
+                "Senior Team Export", type=["html"], accept_multiple_files=False
+            )
+            update_squad_file_u21 = st.file_uploader(
+                "U21 Team Export", type=["html"], accept_multiple_files=False
+            )
+            update_squad_file_u18 = st.file_uploader(
+                "U18 Team Export", type=["html"], accept_multiple_files=False
             )
 
-            if update_squad_team:
-                update_squad = st.button(
+            if (
+                update_squad_file_senior
+                and update_squad_file_u21
+                and update_squad_file_u18
+            ):
+                update_squad_button = st.button(
                     "Update Squad", help="Update the squad database"
                 )
+                if update_squad_button:
+                    update_squad_csv(update_squad_file_senior, "Senior", new_date)
+                    update_squad_csv(update_squad_file_u21, "U21", new_date)
+                    update_squad_csv(update_squad_file_u18, "U18", new_date)
+                    load_squad()
+                    st.info("Squad updated!")
+                    st.rerun()
 
 # pivot wide for display
 df_display = pivot_squad_plan_wide(ss.df_squad_plan, depth)
