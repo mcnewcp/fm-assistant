@@ -259,20 +259,17 @@ def save_squad_plan_csv(
         None
     """
 
+    # choose relevant cols
+    cols = ["position", "role", "choice", "UID", "age", "rating"]
+    df_out = df[cols]
+
     # attach date
-    df["date"] = date
-
-    # # load csv "database"
-    # squad_plan_db = pd.read_csv(path, parse_dates=["date"])
-
-    # # append
-    # db_out = pd.concat([squad_plan_db, df], axis=0)
-
-    # # overwrite
-    # db_out.to_csv(path, index=False)
+    df_out["date"] = date
 
     # append to file
-    df.to_csv(path, mode="a", index=False)
+    with open(path, "a") as f:
+        f.write("\n")
+    df_out.to_csv(path, mode="a", index=False, header=False)
 
 
 # # function for reading table from html
