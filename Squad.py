@@ -11,6 +11,8 @@ from utils import (
     pivot_squad_plan_wide,
     style_squad_plan,
     get_column_config,
+    pivot_squad_plan_long,
+    replace_name_with_uid,
 )
 
 
@@ -92,4 +94,10 @@ df_display_edited = st.data_editor(
 # check for changes
 if not df_display_edited.equals(df_display):
     st.write("CHANGES!")
-    st.dataframe(df_display.compare(df_display_edited))
+    # overwrite squad_plan to trigger recalculation
+    ss.df_squad_plan = (
+        df_display_edited.pipe(pivot_squad_plan_long, depth=depth)
+        .drop(columns=["age", "rating"])
+        .pipe(replace_name_with_uid)
+    )
+    st.rerun()

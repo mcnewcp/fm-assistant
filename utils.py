@@ -15,7 +15,8 @@ def load_squad():
 def load_squad_plan():
     squad_plan_db = pd.read_csv("data/squad_plan.csv", parse_dates=["date"])
     recent_date = squad_plan_db.date.max()
-    df_squad_plan = squad_plan_db[squad_plan_db["date"] == recent_date]
+    cols = ["position", "role", "choice", "UID"]
+    df_squad_plan = squad_plan_db[squad_plan_db["date"] == recent_date][cols]
     ss.df_squad_plan = df_squad_plan
 
 
@@ -29,7 +30,7 @@ def attach_player_cols(df):
     """
     Attach player name and age to the squad plan based on UID.
     """
-    # Drop age column prior to updating
+    # Drop age, if exists, prior to updating
     df_out = df.drop(columns="age", errors="ignore")
 
     # Merge squad plan with squad to get name and age
@@ -153,6 +154,63 @@ def get_column_config(depth: int, all_roles: list, all_names: list):
             "Rating", help="Rating of player in chosen role", disabled=True
         )
     return column_config
+
+
+def pivot_squad_plan_long(df_wide: pd.DataFrame, depth: int):
+    """
+    Pivot the wide squad plan DataFrame back to long format.
+
+    Args:
+        df_wide (pd.DataFrame): Wide format DataFrame of the squad plan.
+        depth (int): Depth to display for each role.
+
+    Returns:
+        pd.DataFrame: Long format DataFrame of the squad plan.
+    """
+    long_data = []
+
+    for _, row in df_wide.iterrows():
+        position = row["position"]
+        role = row["role"]
+
+        for i in range(1, depth + 1):
+            name_col = f"name_{i}"
+            age_col = f"age_{i}"
+            rating_col = f"rating_{i}"
+
+            if pd.notnull(row[name_col]):
+                long_data.append(
+                    {
+                        "position": position,
+                        "role": role,
+                        "choice": i,
+                        "name": row[name_col],
+                        "age": row[age_col],
+                        "rating": row[rating_col],
+                    }
+                )
+
+    df_long = pd.DataFrame(long_data)
+    return df_long
+
+
+def replace_name_with_uid(df: pd.DataFrame):
+    """
+    Attach corresponding UID for name and drop name column.  This is intended to match the format
+    of ss.df_squad_plan.
+
+    Args:
+        df (pd.DataFrame): Long format DataFrame of the squad plan with a column "name".
+
+    Returns:
+        pd.DataFrame: Squad plan DataFrame matching format of ss.df_squad_plan.
+    """
+
+    df_out = df.merge(
+        ss.df_squad[["Name", "UID"]], how="left", left_on="name", right_on="Name"
+    ).drop(columns=["Name", "name"])
+
+    return df_out
 
 
 # # function for reading table from html
