@@ -6,6 +6,7 @@ from utils import (
     load_squad,
     load_squad_plan,
     load_role_config,
+    reset_upload_keys,
     update_squad_plan,
     pivot_squad_plan_wide,
     style_squad_plan,
@@ -13,13 +14,14 @@ from utils import (
     pivot_squad_plan_long,
     attach_uid,
     save_squad_plan_csv,
+    update_squad_csv,
 )
 
 
 st.title("Football Manager Assistant ⚽️🤖")
 st.subheader("Squad Planner")
 
-# Initialize dataframes
+# Initialize session state
 # TODO: these should connect to supabase databases
 if "df_role_config" not in ss:
     load_role_config()
@@ -27,6 +29,8 @@ if "df_squad" not in ss:
     load_squad()
 if "df_squad_plan" not in ss:
     load_squad_plan()
+if "upload_keys" not in ss:
+    reset_upload_keys()
 
 # load lists
 all_roles = ss.df_role_config["Role"].unique()
@@ -35,51 +39,83 @@ all_teams = ss.df_squad["Team"].unique()
 
 # sidebar
 with st.sidebar:
-    # squad depth for each role
-    depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
 
-    # load the most recent squad plan
-    load_squad_plan_button = st.button(
-        "Load Squad Plan", "Load the most recent squad plan"
-    )
-    if load_squad_plan_button:
-        load_squad_plan()
-
-    # in-game date for use with saving squad plan and updating squad
-    new_date = st.date_input(
-        "In-Game Date",
-        None,
-        datetime.date(2020, 1, 1),
-        datetime.date(2050, 12, 31),
-        help="In-Game date must be specified for saving a Squad Plan or updating the Squad",
-    )
-
-    if new_date:
-        # save squad plan
-        save_squad_plan_button = st.button(
-            "Save Squad Plan", help="Save the current squad plan in the database"
+    # user selections
+    with st.container(border=True):
+        st.write("User Inputs")
+        # squad depth for each role
+        depth = st.number_input(
+            "Position Depth", 1, 10, 4, help="Depth to display for each role"
         )
-        if save_squad_plan_button:
-            save_squad_plan_csv(ss.df_squad_plan, new_date)
-
-        # update squad
-        update_squad_file = st.file_uploader(
-            "Upload Squad Export", type=["html"], accept_multiple_files=False
+        # in-game date for use with saving squad plan and updating squad
+        new_date = st.date_input(
+            "In-Game Date",
+            None,
+            datetime.date(2020, 1, 1),
+            datetime.date(2050, 12, 31),
+            help="In-Game date must be specified for saving a Squad Plan or updating the Squad",
         )
 
-        if update_squad_file:
-            # team for uploaded file
-            update_squad_team = st.radio(
-                "Team",
-                all_teams,
-                None,
-                help="Choose team associated with the squad update file",
+    with st.container(border=True):
+        st.write("Update Squad Plan")
+        # load the most recent squad plan
+        load_squad_plan_button = st.button(
+            "Load Squad Plan", "Load the most recent squad plan"
+        )
+        if load_squad_plan_button:
+            load_squad_plan()
+            st.info("Squad plan loaded!")
+
+        if new_date:
+            # save squad plan
+            save_squad_plan_button = st.button(
+                "Save Squad Plan", help="Save the current squad plan in the database"
+            )
+            if save_squad_plan_button:
+                save_squad_plan_csv(ss.df_squad_plan, new_date)
+                st.info("Squad plan saved!")
+
+    with st.container(border=True):
+        st.write("Update Squad")
+        if new_date:
+            updloaded_squad_file_senior = st.file_uploader(
+                "Senior Team Export",
+                type=["html"],
+                accept_multiple_files=False,
+                key=ss.upload_keys[0],
+            )
+            uploaded_squad_file_u21 = st.file_uploader(
+                "U21 Team Export",
+                type=["html"],
+                accept_multiple_files=False,
+                key=ss.upload_keys[1],
+            )
+            uploaded_squad_file_u18 = st.file_uploader(
+                "U18 Team Export",
+                type=["html"],
+                accept_multiple_files=False,
+                key=ss.upload_keys[2],
             )
 
-            if update_squad_team:
-                update_squad = st.button(
+            if (
+                updloaded_squad_file_senior
+                and uploaded_squad_file_u21
+                and uploaded_squad_file_u18
+            ):
+                update_squad_button = st.button(
                     "Update Squad", help="Update the squad database"
                 )
+                if update_squad_button:
+                    update_squad_csv(
+                        updloaded_squad_file_senior,
+                        uploaded_squad_file_u21,
+                        uploaded_squad_file_u18,
+                        new_date,
+                    )
+                    load_squad()
+                    ss.df_squad_plan = update_squad_plan(ss.df_squad_plan)
+                    reset_upload_keys()
+                    st.rerun()
 
 # pivot wide for display
 df_display = pivot_squad_plan_wide(ss.df_squad_plan, depth)
@@ -95,7 +131,6 @@ df_display_edited = st.data_editor(
 
 # check for changes
 if not df_display_edited.equals(df_display):
-    st.write("CHANGES!")
     # pivot long, update age & rating, overwrite ss squad plan
     ss.df_squad_plan = (
         df_display_edited.pipe(
