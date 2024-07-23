@@ -332,6 +332,12 @@ def _read_html_file(uploaded_file):
     return df.dropna(how="all")
 
 
+# reset file upload widget keys
+def reset_upload_keys():
+    upload_keys = [f"{t}_{datetime.datetime.now()}" for t in ["Senior", "U21", "U18"]]
+    ss.upload_keys = upload_keys
+
+
 # # function for summarizing scouting ranges by either mean, min, or max
 # def summarize_scouting_ranges(
 #     df_players: pd.DataFrame, summarization_method: str = "mean"

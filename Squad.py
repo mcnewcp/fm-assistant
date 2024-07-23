@@ -6,6 +6,7 @@ from utils import (
     load_squad,
     load_squad_plan,
     load_role_config,
+    reset_upload_keys,
     update_squad_plan,
     pivot_squad_plan_wide,
     style_squad_plan,
@@ -20,7 +21,7 @@ from utils import (
 st.title("Football Manager Assistant ⚽️🤖")
 st.subheader("Squad Planner")
 
-# Initialize dataframes
+# Initialize session state
 # TODO: these should connect to supabase databases
 if "df_role_config" not in ss:
     load_role_config()
@@ -28,6 +29,8 @@ if "df_squad" not in ss:
     load_squad()
 if "df_squad_plan" not in ss:
     load_squad_plan()
+if "upload_keys" not in ss:
+    reset_upload_keys()
 
 # load lists
 all_roles = ss.df_role_config["Role"].unique()
@@ -61,6 +64,8 @@ with st.sidebar:
         )
         if load_squad_plan_button:
             load_squad_plan()
+            st.info("Squad plan loaded!")
+
         if new_date:
             # save squad plan
             save_squad_plan_button = st.button(
@@ -68,18 +73,28 @@ with st.sidebar:
             )
             if save_squad_plan_button:
                 save_squad_plan_csv(ss.df_squad_plan, new_date)
+                st.info("Squad plan saved!")
 
     with st.container(border=True):
         st.write("Update Squad")
         if new_date:
             updloaded_squad_file_senior = st.file_uploader(
-                "Senior Team Export", type=["html"], accept_multiple_files=False
+                "Senior Team Export",
+                type=["html"],
+                accept_multiple_files=False,
+                key=ss.upload_keys[0],
             )
             uploaded_squad_file_u21 = st.file_uploader(
-                "U21 Team Export", type=["html"], accept_multiple_files=False
+                "U21 Team Export",
+                type=["html"],
+                accept_multiple_files=False,
+                key=ss.upload_keys[1],
             )
             uploaded_squad_file_u18 = st.file_uploader(
-                "U18 Team Export", type=["html"], accept_multiple_files=False
+                "U18 Team Export",
+                type=["html"],
+                accept_multiple_files=False,
+                key=ss.upload_keys[2],
             )
 
             if (
@@ -99,6 +114,7 @@ with st.sidebar:
                     )
                     load_squad()
                     ss.df_squad_plan = update_squad_plan(ss.df_squad_plan)
+                    reset_upload_keys()
                     st.rerun()
 
 # pivot wide for display
