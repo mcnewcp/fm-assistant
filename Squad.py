@@ -39,7 +39,11 @@ with st.sidebar:
     depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
 
     # load the most recent squad plan
-    load_squad_plan = st.button("Load Squad Plan", "Load the most recent squad plan")
+    load_squad_plan_button = st.button(
+        "Load Squad Plan", "Load the most recent squad plan"
+    )
+    if load_squad_plan_button:
+        load_squad_plan()
 
     # in-game date for use with saving squad plan and updating squad
     new_date = st.date_input(
@@ -52,10 +56,10 @@ with st.sidebar:
 
     if new_date:
         # save squad plan
-        save_squad_plan = st.button(
+        save_squad_plan_button = st.button(
             "Save Squad Plan", help="Save the current squad plan in the database"
         )
-        if save_squad_plan:
+        if save_squad_plan_button:
             save_squad_plan_csv(ss.df_squad_plan, new_date)
 
         # update squad
@@ -101,5 +105,3 @@ if not df_display_edited.equals(df_display):
         .pipe(update_squad_plan)  # update age, rating
     )
     st.rerun()
-
-st.dataframe(ss.df_squad_plan)
