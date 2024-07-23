@@ -78,10 +78,18 @@ df_display = (
     ss.df_squad_plan.pipe(attach_player_cols)  # lookup age, name
     .pipe(attach_rating)  # calculate rating
     .pipe(pivot_squad_plan_wide, depth=depth)  # pivot wide for display
-    .pipe(style_squad_plan)  # style ratings, age
 )
 
+# display formatted squad planner
 column_config = get_column_config(depth, all_roles, all_names)
-st.data_editor(
-    df_display, column_config=column_config, num_rows="fixed", hide_index=True
+df_display_edited = st.data_editor(
+    style_squad_plan(df_display),
+    column_config=column_config,
+    num_rows="fixed",
+    hide_index=True,
 )
+
+# check for changes
+if not df_display_edited.equals(df_display):
+    st.write("CHANGES!")
+    st.dataframe(df_display.compare(df_display_edited))
