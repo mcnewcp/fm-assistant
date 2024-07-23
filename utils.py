@@ -207,25 +207,6 @@ def pivot_squad_plan_long(df_wide: pd.DataFrame, depth: int):
     return df_long
 
 
-def replace_name_with_uid(df: pd.DataFrame):
-    """
-    Attach corresponding UID for name and drop name column.  This is intended to match the format
-    of ss.df_squad_plan.
-
-    Args:
-        df (pd.DataFrame): Long format DataFrame of the squad plan with a column "name".
-
-    Returns:
-        pd.DataFrame: Squad plan DataFrame matching format of ss.df_squad_plan.
-    """
-
-    df_out = df.merge(
-        ss.df_squad[["Name", "UID"]], how="left", left_on="name", right_on="Name"
-    ).drop(columns=["Name", "name"])
-
-    return df_out
-
-
 def attach_uid(df: pd.DataFrame):
     """
     Attach corresponding UID for name.
