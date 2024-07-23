@@ -29,8 +29,8 @@ def attach_player_cols(df):
     """
     Attach player name and age to the squad plan based on UID.
     """
-    # drop age col prior to updating
-    df_out = df.drop(columns="age")
+    # Drop age column prior to updating
+    df_out = df.drop(columns="age", errors="ignore")
 
     # Merge squad plan with squad to get name and age
     df_out = df_out.merge(ss.df_squad[["UID", "Name", "Age"]], on="UID", how="left")
@@ -42,9 +42,8 @@ def attach_player_cols(df):
 
 
 # attach ratings to squad plan df
-def attach_rating(df: pd.DataFrame):
-    df_out = df
-    df_out.drop(columns="rating")
+def attach_rating(df):
+    df_out = df.drop(columns="rating", errors="ignore")
 
     # Apply the rating calculation to each row in the squad plan
     df_out["rating"] = df_out.apply(
@@ -56,12 +55,12 @@ def attach_rating(df: pd.DataFrame):
 
 # calculate a player's rating for a role
 def _calculate_rating(uid: str, role: str):
-    # fetch weights for role
+    # Fetch weights for role
     role_weights = ss.df_role_config[ss.df_role_config["Role"] == role].iloc[0][1:]
 
-    # fetch player attributes
+    # Fetch player attributes
     player_attributes = ss.df_squad[ss.df_squad["UID"] == uid].iloc[0]
-    player_attributes = player_attributes[role_weights.index]
+    player_attributes = player_attributes[role_weights.index].fillna(0)
 
     # Calculate the rating
     weighted_attributes = player_attributes * role_weights
