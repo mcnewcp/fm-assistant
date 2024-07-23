@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 from streamlit import session_state as ss
+import datetime
 
 
 # load df_squad into session state
@@ -15,9 +16,9 @@ def load_squad():
 def load_squad_plan():
     squad_plan_db = pd.read_csv("data/squad_plan.csv", parse_dates=["date"])
     recent_date = squad_plan_db.date.max()
-    cols = ["position", "role", "choice", "UID"]
+    cols = ["position", "role", "choice", "UID", "age", "rating"]
     df_squad_plan = squad_plan_db[squad_plan_db["date"] == recent_date][cols]
-    ss.df_squad_plan = df_squad_plan
+    ss.df_squad_plan = update_squad_plan(df_squad_plan)
 
 
 # load role config into session state
@@ -25,16 +26,29 @@ def load_role_config():
     ss.df_role_config = pd.read_csv("role-config.csv")
 
 
+# update rating and age on squad plan df
+def update_squad_plan(df: pd.DataFrame):
+    """ """
+
+    # specify cols to drop any updateable cols
+    cols = ["position", "role", "choice", "UID"]
+
+    df_out = (
+        df[cols]
+        .pipe(_attach_player_cols)  # attach age, name
+        .pipe(_attach_rating)  # calculate and attach ratings
+    )
+
+    return df_out
+
+
 # attach name and updated age
-def attach_player_cols(df):
+def _attach_player_cols(df):
     """
     Attach player name and age to the squad plan based on UID.
     """
-    # Drop age, if exists, prior to updating
-    df_out = df.drop(columns="age", errors="ignore")
-
     # Merge squad plan with squad to get name and age
-    df_out = df_out.merge(ss.df_squad[["UID", "Name", "Age"]], on="UID", how="left")
+    df_out = df.merge(ss.df_squad[["UID", "Name", "Age"]], on="UID", how="left")
 
     # Rename the columns to match the expected output
     df_out.rename(columns={"Name": "name", "Age": "age"}, inplace=True)
@@ -43,9 +57,8 @@ def attach_player_cols(df):
 
 
 # attach ratings to squad plan df
-def attach_rating(df):
-    df_out = df.drop(columns="rating", errors="ignore")
-
+def _attach_rating(df):
+    df_out = df
     # Apply the rating calculation to each row in the squad plan
     df_out["rating"] = df_out.apply(
         lambda row: _calculate_rating(row["UID"], row["role"]), axis=1
@@ -194,23 +207,50 @@ def pivot_squad_plan_long(df_wide: pd.DataFrame, depth: int):
     return df_long
 
 
-def replace_name_with_uid(df: pd.DataFrame):
+def attach_uid(df: pd.DataFrame):
     """
-    Attach corresponding UID for name and drop name column.  This is intended to match the format
-    of ss.df_squad_plan.
+    Attach corresponding UID for name.
 
     Args:
         df (pd.DataFrame): Long format DataFrame of the squad plan with a column "name".
 
     Returns:
-        pd.DataFrame: Squad plan DataFrame matching format of ss.df_squad_plan.
+        pd.DataFrame: Squad plan DataFrame with corresponding UID column.
     """
 
     df_out = df.merge(
         ss.df_squad[["Name", "UID"]], how="left", left_on="name", right_on="Name"
-    ).drop(columns=["Name", "name"])
+    ).drop(columns=["Name"])
 
     return df_out
+
+
+def save_squad_plan_csv(
+    df: pd.DataFrame, date: datetime.date, path: str = "data/squad_plan.csv"
+):
+    """
+    Take the edited squad plan and append it to the csv "database", using the user provided
+    in-game date.
+    Args:
+        df (pd.DataFrame): Long format DataFrame of the squad plan.
+        date (datetime.date): In-game date to attach to squad plan.
+        path (str): Local path to csv "database".
+
+    Returns:
+        None
+    """
+
+    # choose relevant cols
+    cols = ["position", "role", "choice", "UID", "age", "rating"]
+    df_out = df[cols]
+
+    # attach date
+    df_out["date"] = date
+
+    # append to file
+    with open(path, "a") as f:
+        f.write("\n")
+    df_out.to_csv(path, mode="a", index=False, header=False)
 
 
 # # function for reading table from html
