@@ -72,30 +72,33 @@ with st.sidebar:
     with st.container(border=True):
         st.write("Update Squad")
         if new_date:
-            update_squad_file_senior = st.file_uploader(
+            updloaded_squad_file_senior = st.file_uploader(
                 "Senior Team Export", type=["html"], accept_multiple_files=False
             )
-            update_squad_file_u21 = st.file_uploader(
+            uploaded_squad_file_u21 = st.file_uploader(
                 "U21 Team Export", type=["html"], accept_multiple_files=False
             )
-            update_squad_file_u18 = st.file_uploader(
+            uploaded_squad_file_u18 = st.file_uploader(
                 "U18 Team Export", type=["html"], accept_multiple_files=False
             )
 
             if (
-                update_squad_file_senior
-                and update_squad_file_u21
-                and update_squad_file_u18
+                updloaded_squad_file_senior
+                and uploaded_squad_file_u21
+                and uploaded_squad_file_u18
             ):
                 update_squad_button = st.button(
                     "Update Squad", help="Update the squad database"
                 )
                 if update_squad_button:
-                    update_squad_csv(update_squad_file_senior, "Senior", new_date)
-                    update_squad_csv(update_squad_file_u21, "U21", new_date)
-                    update_squad_csv(update_squad_file_u18, "U18", new_date)
+                    update_squad_csv(
+                        updloaded_squad_file_senior,
+                        uploaded_squad_file_u21,
+                        uploaded_squad_file_u18,
+                        new_date,
+                    )
                     load_squad()
-                    st.info("Squad updated!")
+                    ss.df_squad_plan = update_squad_plan(ss.df_squad_plan)
                     st.rerun()
 
 # pivot wide for display
@@ -112,7 +115,6 @@ df_display_edited = st.data_editor(
 
 # check for changes
 if not df_display_edited.equals(df_display):
-    st.write("CHANGES!")
     # pivot long, update age & rating, overwrite ss squad plan
     ss.df_squad_plan = (
         df_display_edited.pipe(

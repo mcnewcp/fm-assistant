@@ -53,6 +53,9 @@ def _attach_player_cols(df):
     # Rename the columns to match the expected output
     df_out.rename(columns={"Name": "name", "Age": "age"}, inplace=True)
 
+    # fill NA names with ""
+    df_out["name"] = df_out["name"].fillna("")
+
     return df_out
 
 
@@ -73,7 +76,12 @@ def _calculate_rating(uid: str, role: str):
     role_weights = ss.df_role_config[ss.df_role_config["Role"] == role].iloc[0][1:]
 
     # Fetch player attributes
-    player_attributes = ss.df_squad[ss.df_squad["UID"] == uid].iloc[0]
+    try:
+        player_attributes = ss.df_squad[ss.df_squad["UID"] == uid].iloc[0]
+    except Exception as e:
+        # unable to find player in squad, return None
+        return None
+
     player_attributes = player_attributes[role_weights.index].fillna(0)
 
     # Calculate the rating
@@ -112,7 +120,7 @@ def pivot_squad_plan_wide(df_long: pd.DataFrame, depth: int):
                 wide_row[f"age_{i}"] = choice_row.iloc[0]["age"]
                 wide_row[f"rating_{i}"] = choice_row.iloc[0]["rating"]
             else:
-                wide_row[f"name_{i}"] = None
+                wide_row[f"name_{i}"] = ""
                 wide_row[f"age_{i}"] = None
                 wide_row[f"rating_{i}"] = None
 
@@ -253,21 +261,63 @@ def save_squad_plan_csv(
     df_out.to_csv(path, mode="a", index=False, header=False)
 
 
+# append updated squad info to csv "database"
 def update_squad_csv(
-    uploaded_file, team: str, date: datetime.date, path: str = "data/squad.csv"
+    uploaded_squad_file_senior,
+    uploaded_squad_file_u21,
+    uploaded_squad_file_u18,
+    new_date: datetime.date,
+    path: str = "data/squad.csv",
 ):
-    # read file
-    df_out = _read_html_file(uploaded_file)
+    # read and compile
+    df_out = _compile_squad(
+        uploaded_squad_file_senior,
+        uploaded_squad_file_u21,
+        uploaded_squad_file_u18,
+        new_date,
+    )
 
-    # attach date, team selections
-    df_out["Team"] = team
-    df_out["Date"] = date
+    # drop any dups
+    df_out = _drop_dups_squad(df_out)
 
     # append to csv "database"
     df_out.to_csv(path, mode="a", index=False, header=False)
 
-    # reload sqaud in ss
-    load_squad()
+
+# compile uploaded squad files and add team, date cols
+def _compile_squad(
+    uploaded_squad_file_senior,
+    uploaded_squad_file_u21,
+    uploaded_squad_file_u18,
+    new_date,
+):
+    df_senior = _read_html_file(uploaded_squad_file_senior)
+    df_u21 = _read_html_file(uploaded_squad_file_u21)
+    df_u18 = _read_html_file(uploaded_squad_file_u18)
+    df_senior["Team"] = "Senior"
+    df_u21["Team"] = "U21"
+    df_u18["Team"] = "U18"
+
+    df_out = pd.concat([df_senior, df_u21, df_u18], axis=0, ignore_index=True)
+    df_out["Date"] = new_date
+    return df_out
+
+
+# drop duplicates from squad
+# a player may be accidentally listed in more than one team within squad
+# in this case, they should be assigned to the more senior team
+def _drop_dups_squad(df: pd.DataFrame):
+    all_attributes = ss.df_role_config.drop(columns=["Role"]).columns.to_list()
+
+    # order by team seniority prior to dropping dups
+    df_out = pd.concat(
+        [df[df["Team"] == "Senior"], df[df["Team"] == "U21"], df[df["Team"] == "U18"]],
+        axis=0,
+    )
+    df_out = df_out.drop_duplicates(
+        subset=["UID"] + all_attributes, keep="first", ignore_index=True
+    )
+    return df_out
 
 
 # function for reading table from html
