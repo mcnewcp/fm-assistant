@@ -225,40 +225,6 @@ def replace_name_with_uid(df: pd.DataFrame):
 #     return df.dropna(how="all")
 
 
-# # function to score players on one or more roles
-# def score_players(
-#     roles: list,
-#     df: pd.DataFrame,
-#     selected_cols: list,
-# ):
-#     # load role config
-#     df_role = pd.read_csv("role-config.csv")
-#     all_attributes = df_role.drop(columns=["Role"]).columns.to_list()
-
-#     # instantiate objects
-#     df_scores = pd.DataFrame(df["UID"]).set_index("UID")
-
-#     for role in roles:
-#         # generate weight dict for role
-#         role_dict = df_role.query("Role==@role")[all_attributes].to_dict("records")[0]
-
-#         # score players
-#         scores = df.set_index("UID")[all_attributes].mul(role_dict).sum(axis=1)
-#         total_weight = 0
-#         for attr, weight in role_dict.items():
-#             if pd.notna(weight):
-#                 total_weight += weight
-#         norm_scores = scores / total_weight
-
-#         # update objects
-#         df_scores = df_scores.join(pd.DataFrame({role: norm_scores}))
-
-#     # compile score df and return
-#     df_scores = df_scores.join(df.set_index("UID")[selected_cols])
-
-#     return df_scores
-
-
 # # function for summarizing scouting ranges by either mean, min, or max
 # def summarize_scouting_ranges(
 #     df_players: pd.DataFrame, summarization_method: str = "mean"
