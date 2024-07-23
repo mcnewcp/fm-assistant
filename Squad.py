@@ -1,116 +1,103 @@
 import streamlit as st
+from streamlit import session_state as ss
 import pandas as pd
-import numpy as np
-from utils import *
+import datetime
+from utils import (
+    load_squad,
+    load_squad_plan,
+    load_role_config,
+    attach_player_cols,
+    attach_rating,
+    pivot_squad_plan_wide,
+    style_squad_plan,
+    get_column_config,
+    pivot_squad_plan_long,
+    replace_name_with_uid,
+)
 
 
-st.title("Football Manager Assistant")
+st.title("Football Manager Assistant ⚽️🤖")
+st.subheader("Squad Planner")
 
-# load roles
-df_role = pd.read_csv("role-config.csv")
-all_roles = df_role["Role"].unique()
+# Initialize dataframes
+# TODO: these should connect to supabase databases
+if "df_squad" not in ss:
+    load_squad()
+if "df_squad_plan" not in ss:
+    load_squad_plan()
+if "df_role_config" not in ss:
+    load_role_config()
+
+# load lists
+all_roles = ss.df_role_config["Role"].unique()
+all_names = ss.df_squad["Name"].unique()
+all_teams = ss.df_squad["Team"].unique()
 
 # sidebar
 with st.sidebar:
-    # role selection
-    roles = st.multiselect(
-        "Select roles for scoring squad",
-        all_roles,
-        (
-            "Inverted Wing Back (A)"
-            if "roles_squad" not in st.session_state
-            else st.session_state["roles_squad"]
-        ),
-        placeholder="Choose one or more roles",
+    # squad depth for each role
+    depth = st.number_input("Depth", 1, 10, 4, help="Depth to display for each role")
+
+    # load the most recent squad plan
+    load_squad_plan = st.button("Load Squad Plan", "Load the most recent squad plan")
+
+    # in-game date for use with saving squad plan and updating squad
+    new_date = st.date_input(
+        "In-Game Date",
+        None,
+        datetime.date(2020, 1, 1),
+        datetime.date(2050, 12, 31),
+        help="In-Game date must be specified for saving a Squad Plan or updating the Squad",
     )
 
-    # display columns selection
-    selectable_cols = ["Age", "Personality", "Height", "Left Foot", "Right Foot"]
-    selected_cols = st.multiselect(
-        "Select additional display columns",
-        selectable_cols,
-        (
-            ["Age", "Personality"]
-            if "selected_cols_squad" not in st.session_state
-            else st.session_state["selected_cols_squad"]
-        ),
-        placeholder="Choose display columns",
-    )
+    if new_date:
+        # save squad plan
+        save_squad_plan = st.button(
+            "Save Squad Plan", help="Save the current squad plan in the database"
+        )
 
-    # squad file upload
-    uploaded_file = st.file_uploader("Choose an exported squad HTML", type="html")
+        # update squad
+        update_squad_file = st.file_uploader(
+            "Upload Squad Export", type=["html"], accept_multiple_files=False
+        )
 
-# update session state
-st.session_state["roles_squad"] = roles
-st.session_state["selected_cols_squad"] = selected_cols
+        if update_squad_file:
+            # team for uploaded file
+            update_squad_team = st.radio(
+                "Team",
+                all_teams,
+                None,
+                help="Choose team associated with the squad update file",
+            )
 
-# load previous squad planner
-df_squad_planner = pd.read_csv("data/squad_plan.csv")
+            if update_squad_team:
+                update_squad = st.button(
+                    "Update Squad", help="Update the squad database"
+                )
 
-# load players df
-if uploaded_file is not None:
-    # Check if the uploaded file has an HTML extension
-    if not uploaded_file.name.endswith(".html"):
-        st.error("Error: Please upload a valid HTML file.")
-    else:
-        # Read HTML file
-        st.session_state["df_players_squad"] = read_html_file(uploaded_file)
-
-# load all possible players
-all_names = st.session_state.df_players_squad.Name.unique()
-
-if len(roles) > 0 and "df_players_squad" in st.session_state:
-    # generate scored df
-    df_scores = score_players(
-        roles, st.session_state["df_players_squad"], selected_cols
-    )
-
-    # display table
-    st.dataframe(df_scores, use_container_width=True)
-
-# set up squad planner df
-depth = 4  # squad depth per role
-rating_cols = [f"rating_{i}" for i in range(1, depth + 1)]
-age_cols = [f"age_{i}" for i in range(1, depth + 1)]
-
-
-# apply conditional formatting to rating cols
-def pd_styler(styler, rating_cols: list, age_cols: list):
-    styler.format(precision=2, subset=rating_cols)
-    styler.format(precision=0, subset=age_cols)
-    styler.background_gradient(axis=None, cmap="RdYlGn", subset=rating_cols)
-    return styler
-
-
-df_squad_planner_styled = df_squad_planner.style.pipe(
-    pd_styler, rating_cols=rating_cols, age_cols=age_cols
+# generate display df
+df_display = (
+    ss.df_squad_plan.pipe(attach_player_cols)  # lookup age, name
+    .pipe(attach_rating)  # calculate rating
+    .pipe(pivot_squad_plan_wide, depth=depth)  # pivot wide for display
 )
 
-# display squad planner df
-column_config = {
-    "position": st.column_config.TextColumn(
-        "Position",
-        help="Enter any position, doesn't affect calculations",
-    ),
-    "role": st.column_config.SelectboxColumn(
-        "Role", help="Select role to calculate ratings", options=all_roles
-    ),
-}
-# Add entries to column_config for each player depth
-for i in range(1, depth + 1):
-    column_config[f"name_{i}"] = st.column_config.SelectboxColumn(
-        "Name", help="Select player name", options=all_names
-    )
-    column_config[f"age_{i}"] = st.column_config.NumberColumn(
-        "Age", help="Age of player", disabled=True
-    )
-    column_config[f"rating_{i}"] = st.column_config.NumberColumn(
-        "Rating", help="Rating of player in chosen role", disabled=True
-    )
-st.data_editor(
-    df_squad_planner_styled,
-    disabled=rating_cols + age_cols,
+# display formatted squad planner
+column_config = get_column_config(depth, all_roles, all_names)
+df_display_edited = st.data_editor(
+    style_squad_plan(df_display),
     column_config=column_config,
     num_rows="fixed",
     hide_index=True,
 )
+
+# check for changes
+if not df_display_edited.equals(df_display):
+    st.write("CHANGES!")
+    # overwrite squad_plan to trigger recalculation
+    ss.df_squad_plan = (
+        df_display_edited.pipe(pivot_squad_plan_long, depth=depth)
+        .drop(columns=["age", "rating"])
+        .pipe(replace_name_with_uid)
+    )
+    st.rerun()
