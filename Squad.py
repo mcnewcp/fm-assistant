@@ -11,6 +11,7 @@ from utils import (
     rate_squad_all_roles,
     pivot_squad_plan_wide,
     style_squad_plan,
+    pd_styler,
     get_column_config,
     pivot_squad_plan_long,
     attach_uid,
@@ -147,4 +148,10 @@ if not df_display_edited.equals(df_display):
 st.markdown("## Squad Ratings")
 df_squad_all_roles = rate_squad_all_roles().drop(columns=all_attributes + ["UID"])
 
-st.dataframe(df_squad_all_roles)
+st.dataframe(  # apply styling
+    df_squad_all_roles.style.pipe(
+        pd_styler,
+        rating_cols=list(ss.df_squad_plan.role.unique()) + ["best_rating"],
+        age_cols=["Age"],
+    )
+)

@@ -94,7 +94,7 @@ def _calculate_rating(uid: str, role: str):
 # calculate role ratings for each squad member
 def rate_squad_all_roles():
     df = ss.df_squad.set_index("Name")
-    roles = ss.df_squad_plan.role.unique()
+    roles = list(ss.df_squad_plan.role.unique())
 
     # calculate ratings for each role
     for role in roles:
@@ -156,12 +156,12 @@ def style_squad_plan(df: pd.DataFrame):
     rating_cols = [col for col in df.columns if "rating" in col]
 
     # apply styling
-    df_styled = df.style.pipe(_pd_styler, rating_cols=rating_cols, age_cols=age_cols)
+    df_styled = df.style.pipe(pd_styler, rating_cols=rating_cols, age_cols=age_cols)
     return df_styled
 
 
 # pandas styler function
-def _pd_styler(styler, rating_cols: list, age_cols: list):
+def pd_styler(styler, rating_cols: list, age_cols: list):
     styler.format(precision=2, subset=rating_cols)
     styler.format(precision=0, subset=age_cols)
     styler.background_gradient(axis=None, cmap="RdYlGn", subset=rating_cols)
