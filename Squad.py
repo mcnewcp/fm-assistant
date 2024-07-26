@@ -8,6 +8,7 @@ from utils import (
     load_role_config,
     reset_upload_keys,
     update_squad_plan,
+    rate_squad_all_roles,
     pivot_squad_plan_wide,
     style_squad_plan,
     get_column_config,
@@ -19,7 +20,7 @@ from utils import (
 
 
 st.title("Football Manager Assistant ⚽️🤖")
-st.subheader("Squad Planner")
+st.markdown("## Squad Planner")
 
 # Initialize session state
 # TODO: these should connect to supabase databases
@@ -36,6 +37,7 @@ if "upload_keys" not in ss:
 all_roles = ss.df_role_config["Role"].unique()
 all_names = ss.df_squad["Name"].unique()
 all_teams = ss.df_squad["Team"].unique()
+all_attributes = ss.df_role_config.drop(columns=["Role"]).columns.to_list()
 
 # sidebar
 with st.sidebar:
@@ -140,3 +142,9 @@ if not df_display_edited.equals(df_display):
         .pipe(update_squad_plan)  # update age, rating
     )
     st.rerun()
+
+# squad role ratings display
+st.markdown("## Squad Ratings")
+df_squad_all_roles = rate_squad_all_roles().drop(columns=all_attributes + ["UID"])
+
+st.dataframe(df_squad_all_roles)
