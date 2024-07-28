@@ -92,8 +92,8 @@ def _calculate_rating(uid: str, role: str):
 
 
 # calculate role ratings for each squad member
-def rate_squad_all_roles():
-    df = ss.df_squad.set_index("Name")
+def rate_squad_all_roles(teams: list):
+    df = ss.df_squad.query("Team in @teams").set_index("Name")
     roles = list(ss.df_squad_plan.role.unique())
 
     # calculate ratings for each role

@@ -150,8 +150,12 @@ with st.container(border=True):
     st.markdown("## Squad Ratings")
     team_selection = st.multiselect("Teams Included", all_teams, all_teams)
     update_squad_roles_button = st.button("Update Calculations")
-    if "squad_all_roles" not in ss:
-        ss.df_squad_all_roles = rate_squad_all_roles().drop(
+    if "df_squad_all_roles" not in ss:
+        ss.df_squad_all_roles = rate_squad_all_roles(team_selection).drop(
+            columns=all_attributes + ["UID"]
+        )
+    if update_squad_roles_button:
+        ss.df_squad_all_roles = rate_squad_all_roles(team_selection).drop(
             columns=all_attributes + ["UID"]
         )
 
