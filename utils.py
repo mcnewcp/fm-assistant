@@ -91,6 +91,22 @@ def _calculate_rating(uid: str, role: str):
     return rating
 
 
+# calculate role ratings for each squad member
+def rate_squad_all_roles(teams: list):
+    df = ss.df_squad.query("Team in @teams").set_index("Name")
+    roles = list(ss.df_squad_plan.role.unique())
+
+    # calculate ratings for each role
+    for role in roles:
+        df[role] = df.apply(lambda row: _calculate_rating(row["UID"], role), axis=1)
+
+    # find best role
+    df["best_role"] = df[roles].idxmax(axis="columns")
+    df["best_rating"] = df[roles].max(axis=1)
+
+    return df
+
+
 # pivot squad plan wide for display
 def pivot_squad_plan_wide(df_long: pd.DataFrame, depth: int):
     # Initialize an empty list to store the wide format data
@@ -140,12 +156,12 @@ def style_squad_plan(df: pd.DataFrame):
     rating_cols = [col for col in df.columns if "rating" in col]
 
     # apply styling
-    df_styled = df.style.pipe(_pd_styler, rating_cols=rating_cols, age_cols=age_cols)
+    df_styled = df.style.pipe(pd_styler, rating_cols=rating_cols, age_cols=age_cols)
     return df_styled
 
 
 # pandas styler function
-def _pd_styler(styler, rating_cols: list, age_cols: list):
+def pd_styler(styler, rating_cols: list, age_cols: list):
     styler.format(precision=2, subset=rating_cols)
     styler.format(precision=0, subset=age_cols)
     styler.background_gradient(axis=None, cmap="RdYlGn", subset=rating_cols)

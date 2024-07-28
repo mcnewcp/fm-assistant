@@ -8,8 +8,10 @@ from utils import (
     load_role_config,
     reset_upload_keys,
     update_squad_plan,
+    rate_squad_all_roles,
     pivot_squad_plan_wide,
     style_squad_plan,
+    pd_styler,
     get_column_config,
     pivot_squad_plan_long,
     attach_uid,
@@ -19,7 +21,6 @@ from utils import (
 
 
 st.title("Football Manager Assistant ⚽️🤖")
-st.subheader("Squad Planner")
 
 # Initialize session state
 # TODO: these should connect to supabase databases
@@ -36,6 +37,7 @@ if "upload_keys" not in ss:
 all_roles = ss.df_role_config["Role"].unique()
 all_names = ss.df_squad["Name"].unique()
 all_teams = ss.df_squad["Team"].unique()
+all_attributes = ss.df_role_config.drop(columns=["Role"]).columns.to_list()
 
 # sidebar
 with st.sidebar:
@@ -121,13 +123,15 @@ with st.sidebar:
 df_display = pivot_squad_plan_wide(ss.df_squad_plan, depth)
 
 # display formatted squad planner
-column_config = get_column_config(depth, all_roles, all_names)
-df_display_edited = st.data_editor(
-    style_squad_plan(df_display),
-    column_config=column_config,
-    num_rows="fixed",
-    hide_index=True,
-)
+with st.container(border=True):
+    st.markdown("## Squad Planner")
+    column_config = get_column_config(depth, all_roles, all_names)
+    df_display_edited = st.data_editor(
+        style_squad_plan(df_display),
+        column_config=column_config,
+        num_rows="fixed",
+        hide_index=True,
+    )
 
 # check for changes
 if not df_display_edited.equals(df_display):
@@ -140,3 +144,25 @@ if not df_display_edited.equals(df_display):
         .pipe(update_squad_plan)  # update age, rating
     )
     st.rerun()
+
+# squad role ratings display
+with st.container(border=True):
+    st.markdown("## Squad Ratings")
+    team_selection = st.multiselect("Teams Included", all_teams, all_teams)
+    update_squad_roles_button = st.button("Update Calculations")
+    if "df_squad_all_roles" not in ss:
+        ss.df_squad_all_roles = rate_squad_all_roles(team_selection).drop(
+            columns=all_attributes + ["UID"]
+        )
+    if update_squad_roles_button:
+        ss.df_squad_all_roles = rate_squad_all_roles(team_selection).drop(
+            columns=all_attributes + ["UID"]
+        )
+
+    st.dataframe(  # apply styling
+        ss.df_squad_all_roles.style.pipe(
+            pd_styler,
+            rating_cols=list(ss.df_squad_plan.role.unique()) + ["best_rating"],
+            age_cols=["Age"],
+        )
+    )
